@@ -1,53 +1,53 @@
 # Plan TrailTriage
 
-- [x] Phase 1 : CLI, configuration validée, découverte, EXIF, SQLite, reprise, logs.
-- [x] Phase 2 : YOLO local, lots bornés, CPU/CUDA, scores et cache des détections.
-- [x] Phase 3 : regroupement temporel par caméra/dossier.
-- [x] Phase 4 : pHash, comparaison bornée, sélection conservatrice.
-- [x] Phase 5 : liens sûrs, aucune écriture dans les originaux.
-- [x] Phase 6 : CSV, JSONL, erreurs, résumé et mesures.
-- [x] Phase 7 : galerie locale filtrable, labels persistants.
+- [x] Phase 1: CLI, validated configuration, discovery, EXIF, SQLite, recovery, logs.
+- [x] Phase 2: local YOLO, bounded batches, CPU/CUDA, scores and detection cache.
+- [x] Phase 3: temporal grouping by camera/folder.
+- [x] Phase 4: pHash, bounded comparison, conservative selection.
+- [x] Phase 5: safe links, no writing in the originals.
+- [x] Phase 6: CSV, JSONL, errors, summary and metrics.
+- [x] Phase 7: filterable local gallery, persistent labels.
 
-## Décisions
-- Python 3.12 isolé : Python système 3.14 ne doit pas imposer une compatibilité aux bibliothèques GPU.
-- Détection en extra optionnel : découverte et reprise restent utilisables sans PyTorch.
-- Poids YOLO exclusivement locaux : téléchargement initial explicite, aucune connexion nécessaire au scan.
-- Un résultat « vide » signifie aucune détection, pas absence garantie d'événement.
-- Les faibles détections restent en revue ; les seuils proposés ne doivent pas masquer les animaux.
-- Pas de garantie de 500–2 000 images sans calibration sur un échantillon réel.
-- Pas de reconnaissance faciale, VLM ni entraînement en V1.
+## Decisions
+- Isolated Python 3.12: System Python 3.14 should not impose compatibility on GPU libraries.
+- Optional extra detection: discovery and recovery can still be used without PyTorch.
+- Exclusively local YOLO weights: explicit initial download, no connection required for scanning.
+- An “empty” result means no detection, not guaranteed absence of event.
+- Low detections remain under review; the proposed thresholds must not obscure the animals.
+- No guarantee of 500–2 000 images without calibration on a real sample.
+- No facial recognition, VLM or training in V1.
 
-- Déduplication conservatrice : même dossier, même burst, contenu détecté compatible et ancre fixe ; comparaisons bornées à 16 groupes. Les scènes plates restent distinctes.
+- Conservative deduplication: same folder, same burst, compatible detected content and fixed anchor; comparisons limited to 16 groups. Flat scenes remain distinct.
 
-## État de validation
+## Validation status
 
-- 23 tests : configuration, EXIF, reprise, interruption, liens, catégories, pHash,
-  comparaison bornée et serveur/labels.
-- Ruff et vérification de types Mypy sur le paquet.
-- YOLO11n réel sur CPU : 31 images valides + 1 corrompue, reprise sans inférence.
-- Test hors ligne : toute connexion sortante est refusée et comptée ; 0 tentative.
-- Un exemple public Ultralytics valide personnes + bus ; les dessins synthétiques
-  servent au développement, pas à mesurer précision/rappel.
+- 23 tests: configuration, EXIF, recovery, interruption, links, categories, pHash,
+  bounded comparison and server/labels.
+- Ruff and Mypy type checking on the package.
+- Real YOLO11n on CPU: 31 valid images + 1 corrupted, resumed without inference.
+- Offline test: any outgoing connection is refused and counted; 0 attempt.
+- A public Ultralytics example valid people + bus; synthetic designs
+  are for development, not for measuring precision/recall.
 
-## Simplifications justifiées
+## Simplifications justified
 
-- SQLite stocke les détections et clusters comme JSON par image : pas de jointures
-  inutiles, les labels sont séparés et persistent lors d'une réanalyse.
-- Galerie statique + petit serveur Python standard : évite FastAPI pour trois routes.
-  Pagination de 120 images pour garder le navigateur réactif.
-- Seuil incertain utilisé pour la bande de score, mais toute détection faible reste
-  en revue même sous ce seuil (priorité au rappel).
-- Groupes de caméra déduits du dossier parent. Mettre chaque caméra dans son dossier.
-- Configurations de score/déduplication modifiées : recalcul sans nouvelle inférence.
-- Sorties précédentes déplacées sous `.history/`, jamais effacées automatiquement.
-- Aucun VLM, reconnaissance faciale ni entraînement inclus.
+- SQLite stores detections and clusters as JSON per image: no joins
+  unnecessary, the labels are separated and persist during reanalysis.
+- Static gallery + small standard Python server: avoid FastAPI for three routes.
+  Pagination of 120 images to keep the browser responsive.
+- Uncertain threshold used for score band, but any weak detection remains
+  reviewed even below this threshold (priority to recall).
+- Camera groups inferred from parent folder. Put each camera in its folder.
+- Modified score/deduplication configurations: recalculation without new inference.
+- Previous releases moved to `.history/`, never cleared automatically.
+- No VLM, facial recognition or training included.
 
-## À valider sur le terrain
+## To be validated in the field
 
-- [ ] Pilote NVIDIA fonctionnel et version CUDA de PyTorch : cette installation
-  utilise PyTorch CPU et `nvidia-smi` ne communique pas avec le pilote.
-- [ ] Benchmark GPU et échantillon réel (100–500 images) : précision, rappel,
-  animaux non COCO, qualité des timestamps et réglages par caméra.
-- [ ] Scan complet de 50 000 photos après validation de l'échantillon.
-- [ ] Objectif 500–2 000 images à mesurer, sans promettre une réduction universelle.
-- [ ] Calibration assistée, boîtes de détection et raccourcis : améliorations futures.
+- [ ] Working NVIDIA driver and CUDA version of PyTorch: this installation
+  uses PyTorch CPU and `nvidia-smi` does not communicate with the driver.
+- [ ] GPU benchmark and real sample (100–500 images): precision, recall,
+  non-COCO animals, quality of timestamps and camera settings.
+- [ ] Full scan of 50 000 photos after sample validation.
+- [ ] Objective 500–2 000 images to measure, without promising a universal reduction.
+- [ ] Assisted calibration, detection boxes and shortcuts: future improvements.
