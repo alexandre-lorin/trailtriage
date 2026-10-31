@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[project]
+name = "trailtriage"
+version = "0.1.0"
+description = "Local, recoverable trail-camera photo triage"
+requires-python = ">=3.12"
+dependencies = ["Pillow>=10", "PyYAML>=6", "pydantic>=2", "tqdm>=4", "numpy>=1.26", "ImageHash>=4"]
+[project.optional-dependencies]
+detection = ["ultralytics>=8.3,<9"]
+dev = ["pytest>=8", "ruff>=0.9", "mypy>=1", "types-PyYAML", "types-tqdm"]
+[project.scripts]
+trailtriage = "trailtriage.cli:main"
+[tool.ruff]
+line-length = 100
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true

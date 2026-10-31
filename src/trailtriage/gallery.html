@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>TrailTriage — revue locale</title>
+<style>
+body{background:#131a20;color:#edf1f4;font:16px system-ui;margin:24px}
+header{position:sticky;top:0;background:#131a20;padding:12px 0;z-index:1}
+select,button{padding:8px;margin:4px;background:#243440;color:white;border:1px solid #567;border-radius:5px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+article{background:#22303a;padding:12px;border-radius:8px}img{width:100%;height:200px;object-fit:contain}
+p{overflow-wrap:anywhere}a{color:#9cdaff}#status{color:#f5d496}
+</style>
+<h1>TrailTriage</h1><p>Revue locale · Les originaux sont conservés.
+« Vide » ne garantit pas l'absence d'événement. Consultez aussi les erreurs et un échantillon des vides.</p>
+<header><label>Catégorie <select id="category"><option value="">Toutes</option></select></label>
+<label>Tri <select id="sort"><option value="score">Score décroissant</option>
+<option value="time">Chronologique</option></select></label>
+<label><input type="checkbox" id="unlabeled">Sans décision</label>
+<button id="prev">Précédent</button><button id="next">Suivant</button><span id="count"></span>
+<p id="status"></p></header><main id="grid"></main>
+<script>
+const data=__DATA__, token="__TOKEN__", local=location.protocol!=="file:", pageSize=120;
+let page=0;
+const category=document.querySelector('#category'), sort=document.querySelector('#sort');
+for(const c of [...new Set(data.map(x=>x.category))].sort()){
+ const o=document.createElement('option');o.value=c;o.textContent=c;category.append(o);
+}
+const labels=['interesting','boring','known_person','unknown_person','animal','vehicle','false_positive','uncertain'];
+function render(){
+ const filtered=data.filter(x=>(!category.value||x.category===category.value)&&
+ (!document.querySelector('#unlabeled').checked||!x.label));
+ filtered.sort((a,b)=>sort.value==='score'?b.score-a.score:a.timestamp-b.timestamp);
+ const max=Math.max(0,Math.ceil(filtered.length/pageSize)-1);page=Math.min(page,max);
+ document.querySelector('#count').textContent=`${filtered.length} images · page ${page+1}/${max+1}`;
+ const grid=document.querySelector('#grid');grid.replaceChildren();
+ for(const item of filtered.slice(page*pageSize,(page+1)*pageSize)){
+  const card=document.createElement('article'),link=document.createElement('a'),img=document.createElement('img');
+  link.href=local?`/image/${item.id}`:item.href;link.target='_blank';link.rel='noopener';
+  img.src=`thumbnails/${item.id}.jpg`;img.loading='lazy';img.alt=item.filename;link.append(img);card.append(link);
+  const info=document.createElement('p');info.textContent=`${item.filename} · ${item.category}
+`+
+   `${new Date(item.timestamp*1000).toLocaleString()} · score ${item.score.toFixed(1)} · `+
+   `confiance ${(item.confidence*100).toFixed(0)}% · ${item.classes.join(', ')}`;card.append(info);
+  const label=document.createElement('select'),empty=document.createElement('option');
+  empty.value='';empty.textContent='Décision…';label.append(empty);
+  for(const value of labels){const o=document.createElement('option');o.value=value;o.textContent=value;label.append(o)}
+  label.value=item.label||'';label.disabled=!local;
+  label.onchange=async()=>{if(!label.value)return;try{
+   const response=await fetch('/label',{method:'POST',headers:{'Content-Type':'application/json',
+    'X-TrailTriage-Token':token},body:JSON.stringify({id:item.id,label:label.value})});
+   if(!response.ok)throw new Error('Enregistrement refusé');item.label=label.value;
+   document.querySelector('#status').textContent='Décision enregistrée';
+  }catch(error){document.querySelector('#status').textContent=error.message;label.value=item.label||''}};
+  card.append(label);grid.append(card);
+ }
+}
+for(const id of ['category','sort','unlabeled'])document.querySelector('#'+id).onchange=()=>{page=0;render()};
+document.querySelector('#prev').onclick=()=>{page=Math.max(0,page-1);render()};
+document.querySelector('#next').onclick=()=>{page++;render()};
+if(!local)document.querySelector('#status').textContent='Pour enregistrer les décisions : trailtriage serve output/';
+render();
+</script></html>

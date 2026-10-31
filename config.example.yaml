@@ -1,0 +1,26 @@
+input:
+  recursive: true
+  extensions: [jpg, jpeg, png, webp]
+detection:
+  model: ~/.local/share/trailtriage/models/yolo11s.pt
+  device: auto
+  confidence_threshold: 0.15
+  batch_size: auto
+interest:
+  human_weight: 100
+  vehicle_weight: 70
+  animal_weight: 60
+  unknown_weight: 30
+  interesting_threshold: 60
+  uncertain_threshold: 20
+bursts:
+  enabled: true
+  max_gap_seconds: 10
+deduplication:
+  enabled: true
+  phash_distance: 6
+  representatives_per_cluster: 1
+  comparison_window: 16
+output:
+  mode: symlink
+  generate_gallery: true
